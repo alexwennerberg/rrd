@@ -72,18 +72,16 @@ func makeError(e *C.char) error {
 	return Error(C.GoString(e))
 }
 
-func (c *Creator) create() error {
+func (c *Creator) create(args []*cstring) error {
 	filename := C.CString(c.filename)
 	defer freeCString(filename)
-	args := makeArgs(c.args)
-	defer freeArgs(args)
 
 	e := C.rrdCreate(
 		filename,
 		C.ulong(c.step),
 		C.time_t(c.start.Unix()),
 		C.int(len(args)),
-		&args[0],
+		(**C.char)(unsafe.Pointer(&args[0])),
 	)
 	return makeError(e)
 }

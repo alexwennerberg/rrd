@@ -56,11 +56,12 @@ type Creator struct {
 	filename string
 	start    time.Time
 	step     uint
-	args     []string
+	args     []*cstring
 }
 
 // NewCreator returns new Creator object. You need to call Create to really
 // create database file.
+//
 //	filename - name of database file
 //	start    - don't accept any data timed before or at time specified
 //	step     - base interval in seconds with which data will be fed into RRD
@@ -76,20 +77,20 @@ func NewCreator(filename string, start time.Time, step uint) *Creator {
 // passed to rrdcreate(). Each element of args is formatted with fmt.Sprint().
 // Please see the rrdcreate(1) manual page for in-depth documentation.
 func (c *Creator) DS(name, compute string, args ...interface{}) {
-	c.args = append(c.args, "DS:"+name+":"+compute+":"+join(args))
+	c.args = append(c.args, newCstring("DS:"+name+":"+compute+":"+join(args)))
 }
 
 // RRA formats an RRA argument and appends it to the list of arguments to be
 // passed to rrdcreate(). Each element of args is formatted with fmt.Sprint().
 // Please see the rrdcreate(1) manual page for in-depth documentation.
 func (c *Creator) RRA(cf string, args ...interface{}) {
-	c.args = append(c.args, "RRA:"+cf+":"+join(args))
+	c.args = append(c.args, newCstring("RRA:"+cf+":"+join(args)))
 }
 
 // Create creates new database file. If overwrite is true it overwrites
 // database file if exists. If overwrite is false it returns error if file
 // exists (you can use os.IsExist function to check this case).
-func (c *Creator) Create(overwrite bool) error {
+func (c *Creator) Create(overwrite bool, args ...interface{}) error {
 	if !overwrite {
 		f, err := os.OpenFile(
 			c.filename,
@@ -101,7 +102,20 @@ func (c *Creator) Create(overwrite bool) error {
 		}
 		f.Close()
 	}
-	return c.create()
+	if len(args) != 0 {
+		cs := newCstring(join(args))
+		err := c.create([]*cstring{cs})
+		cs.Free()
+		return err
+	} else if len(c.args) != 0 {
+		err := c.create(c.args)
+		for _, a := range c.args {
+			a.Free()
+		}
+		c.args = nil
+		return err
+	}
+	return nil
 }
 
 // Use cstring and unsafe.Pointer to avoid allocations for C calls

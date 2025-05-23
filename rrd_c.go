@@ -76,12 +76,25 @@ func (c *Creator) create() error {
 	filename := C.CString(c.filename)
 	defer freeCString(filename)
 	args := makeArgs(c.args)
-	defer freeArgs(args)
+	template := C.CString(c.template)
+	source := makeArgs(c.source)
+	defer freeCString(template)
+	defer freeArgs(source)
+
+	if len(source) == 0 {
+		source = append(source, (*C.char)(unsafe.Pointer(uintptr(0))))
+	}
+	if c.template == "" {
+		template =  (*C.char)(unsafe.Pointer(uintptr(0)))
+	}
 
 	e := C.rrdCreate(
 		filename,
 		C.ulong(c.step),
 		C.time_t(c.start.Unix()),
+		C.int(c.noOverwrite),
+		&source[0],
+		template,
 		C.int(len(args)),
 		&args[0],
 	)

@@ -20,7 +20,7 @@ func TestAll(t *testing.T) {
 	c.RRA("AVERAGE", 0.5, 5, 100)
 	c.DS("cnt", "COUNTER", heartbeat, 0, 100)
 	c.DS("g", "GAUGE", heartbeat, 0, 60)
-	err := c.Create(true)
+	err := c.Create()
 	if err != nil {
 		t.Fatal(err)
 	}

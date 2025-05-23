@@ -16,9 +16,9 @@ char *rrdError() {
 	return err;
 }
 
-char *rrdCreate(const char *filename, unsigned long step, time_t start, int argc, const char **argv) {
+char *rrdCreate(const char *filename, unsigned long step, time_t start, int no_overwite, const char **sources, const char *template, int argc, const char **argv) {
 	rrd_clear_error();
-	rrd_create_r(filename, step, start, argc, argv);
+	rrd_create_r2(filename, step, start, 0, sources, template, argc, argv);
 	return rrdError();
 }
 

@@ -3,8 +3,8 @@ package rrd
 
 import (
 	"fmt"
-	"math"
 	"os"
+	"math"
 	"runtime"
 	"strings"
 	"time"
@@ -56,6 +56,9 @@ type Creator struct {
 	filename string
 	start    time.Time
 	step     uint
+	noOverwrite int // bool
+	source []string
+	template string
 	args     []string
 }
 
@@ -86,9 +89,24 @@ func (c *Creator) RRA(cf string, args ...interface{}) {
 	c.args = append(c.args, "RRA:"+cf+":"+join(args))
 }
 
+// SetSource sets an existing source file(s) to read data from
+// Please see the rrdcreate(1) manual page for in-depth documentation.
+func (c *Creator) SetSource(s ...string) {
+	c.source = s
+}
+
+func (c *Creator) SetTemplate(t ...string) {
+	c.template = strings.Join(t, ":")
+}
+
+func (c *Creator) SetNoOverwite() {
+	c.noOverwrite = 1
+}
+
 // Create creates new database file. If overwrite is true it overwrites
 // database file if exists. If overwrite is false it returns error if file
 // exists (you can use os.IsExist function to check this case).
+// Deprecated in favor of SetNoOverwrite(), which uses the native RRD flag
 func (c *Creator) Create(overwrite bool) error {
 	if !overwrite {
 		f, err := os.OpenFile(
